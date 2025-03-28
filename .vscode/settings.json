@@ -1,0 +1,12 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/vincent-lenz/fav/ros2/install/scenario_msgs/lib/python3.12/site-packages",
+        "/home/vincent-lenz/fav/ros2/install/final_project_solution/lib/python3.12/site-packages",
+        "/opt/ros/jazzy/lib/python3.12/site-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/vincent-lenz/fav/ros2/install/scenario_msgs/lib/python3.12/site-packages",
+        "/home/vincent-lenz/fav/ros2/install/final_project_solution/lib/python3.12/site-packages",
+        "/opt/ros/jazzy/lib/python3.12/site-packages"
+    ]
+}
