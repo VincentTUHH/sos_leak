@@ -9,7 +9,7 @@ This ROS 2 Python package monitors leak sensors and triggers emergency shutdown 
 ## ✅ Prerequisites
 
 Make sure the following are installed on your Raspberry Pi:
-
+  
 ```bash
 sudo apt install python3-rpi.gpio
 ``` 
