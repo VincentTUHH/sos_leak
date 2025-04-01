@@ -50,6 +50,8 @@ class LeakSafety(Node):
             self.get_logger().warn('Waiting for vehicle disarm service...')
 
         # Internal state
+        self.vehicle_disarmed = False
+        self.manipulator_disarmed = False
         self.shutdown_triggered = False
 
         # Timer to check leak state regularly
@@ -83,13 +85,15 @@ class LeakSafety(Node):
         req = SetBool.Request()
         req.data = False
         future = self.vehicle_client.call_async(req)
-        future.add_done_callback(self.handle_disarm_response)
+        future.add_done_callback(
+            lambda f: self.handle_disarm_response(f, 'vehicle'))
 
     def disarm_manipulator(self):
         req = SetBool.Request()
         req.data = False
         future = self.manipulator_client.call_async(req)
-        future.add_done_callback(self.handle_disarm_response)
+        future.add_done_callback(
+            lambda f: self.handle_disarm_response(f, 'manipulator'))
 
     def handle_disarm_response(self, future):
         try:
@@ -101,6 +105,31 @@ class LeakSafety(Node):
         except Exception as e:
             self.get_logger().error(f'Disarm service call failed: {e}')
         self.shutdown_pi()
+
+    def handle_disarm_response(self, future, component):
+        try:
+            response = future.result()
+            if response.success:
+                self.get_logger().info(
+                    f'{component.capitalize()} disarm successful: {response.message}'
+                )
+            else:
+                self.get_logger().warn(
+                    f'{component.capitalize()} disarm failed: {response.message}'
+                )
+        except Exception as e:
+            self.get_logger().error(
+                f'{component.capitalize()} disarm service call failed: {e}')
+
+        # Track which disarm succeeded
+        if component == 'vehicle':
+            self.vehicle_disarmed = True
+        elif component == 'manipulator':
+            self.manipulator_disarmed = True
+
+        # Check if both are done
+        if self.vehicle_disarmed and self.manipulator_disarmed and self.shutdown_triggered:
+            self.shutdown_pi()
 
     def shutdown_pi(self):
         self.get_logger().info('Shutting down Raspberry Pi...')
