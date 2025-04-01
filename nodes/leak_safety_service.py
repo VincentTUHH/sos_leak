@@ -19,26 +19,33 @@ class LeakSafety(Node):
             namespace='',
             parameters=[
                 ('tube_name', rclpy.Parameter.Type.STRING),
+                ('vehicle_name', rclpy.Parameter.Type.STRING),
             ],
         )
+
         self.tube_name = self.get_parameter(
             'tube_name').get_parameter_value().string_value
+        self.vehicle_name = self.get_parameter(
+            'vehicle_name').get_parameter_value().string_value
 
         # Leak service client
-        self.leak_check_client = self.create_client(srv_type=Trigger,
-                                                    srv_name='get_leak')
+        global_path_get_leak = f'/{self.vehicle_name}/get_leak'
+        self.leak_check_client = self.create_client(
+            srv_type=Trigger, srv_name=global_path_get_leak)
         while not self.leak_check_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn('Waiting for /get_leak service...')
 
         # Manipulator disarm service
-        self.manipulator_client = self.create_client(srv_type=SetBool,
-                                                     srv_name='arm_manipulator')
+        global_path_arm_manipulator = f'/{self.vehicle_name}/arm_manipulator'
+        self.manipulator_client = self.create_client(
+            srv_type=SetBool, srv_name=global_path_arm_manipulator)
         while not self.manipulator_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn('Waiting for manipulator disarm service...')
 
         # Vehicle disarm service
+        global_path_arm = f'/{self.vehicle_name}/arm'
         self.vehicle_client = self.create_client(srv_type=SetBool,
-                                                 srv_name='arm')
+                                                 srv_name=global_path_arm)
         while not self.vehicle_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn('Waiting for vehicle disarm service...')
 

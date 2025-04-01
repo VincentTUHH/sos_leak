@@ -17,16 +17,22 @@ class LeakDetector(Node):
             namespace='',
             parameters=[
                 ('tube_name', rclpy.Parameter.Type.STRING),
+                ('vehicle_name', rclpy.Parameter.Type.STRING),
             ],
         )
+
         self.tube_name = self.get_parameter(
             'tube_name').get_parameter_value().string_value
+        self.vehicle_name = self.get_parameter(
+            'vehicle_name').get_parameter_value().string_value
 
         # Internal flag to avoid repeated calls
         self.leak_already_sent = False
 
         # Create client to leak server
-        self.cli = self.create_client(srv_type=SetBool, srv_name='set_leak')
+        global_service_path = f'/{self.vehicle_name}/set_leak'
+        self.cli = self.create_client(srv_type=SetBool,
+                                      srv_name=global_service_path)
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn('Waiting for set_leak service...')
 

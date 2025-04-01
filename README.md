@@ -9,6 +9,12 @@ This ROS 2 Python package monitors leak sensors and triggers emergency shutdown 
 ## ✅ Prerequisites
 
 Make sure the following are installed on your Raspberry Pi:
+
+```bash
+sudo apt-get update
+sudo apt-get install python3-pip
+sudo pip3 install RPi.GPIO
+```
   
 ```bash
 sudo apt install python3-rpi.gpio
@@ -34,11 +40,11 @@ ros2 launch sos_leak sos_leak.launch.py vehicle_name:=klopsi00 tube_name:=buddy
 On the top tube (main) run:
 
 ```bash
-ros2 launch sos_leak sos_leak_service.launch.py vehicle_name:=klopsi00 tube_name:=main
+ros2 launch sos_leak sos_leak_service.launch.py vehicle_name:=klopsi00 tube_name:=main start_leak_server:=true
 ``` 
 
 On the bottom tube (buddy) run:
 
 ```bash
-ros2 launch sos_leak sos_leak_service.launch.py vehicle_name:=klopsi00 tube_name:=buddy
+ros2 launch sos_leak sos_leak_service.launch.py vehicle_name:=klopsi00 tube_name:=buddy start_leak_server:=false
 ``` 
