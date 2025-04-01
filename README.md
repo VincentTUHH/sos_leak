@@ -15,10 +15,6 @@ sudo apt-get update
 sudo apt-get install python3-pip
 sudo pip3 install RPi.GPIO
 ```
-  
-```bash
-sudo apt install python3-rpi.gpio
-``` 
 
 ## Run sos_leak publisher / subscriber option
 
