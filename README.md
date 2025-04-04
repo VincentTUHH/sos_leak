@@ -13,7 +13,7 @@ Make sure the following are installed on your Raspberry Pi:
 ```bash
 sudo apt-get update
 sudo apt-get install python3-pip
-sudo pip3 install RPi.GPIO
+sudo apt install python3-rpi.gpio
 ```
 
 ## Run sos_leak publisher / subscriber option
