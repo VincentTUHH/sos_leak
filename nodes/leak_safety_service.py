@@ -2,7 +2,8 @@
 
 import rclpy
 from rclpy.node import Node
-from std_srvs.srv import SetBool, Trigger
+from std_srvs.srv import SetBool, Trigger, Empty
+from buttons_msgs.msg import Button
 import os
 
 # Pixhawk 6c settings
@@ -28,6 +29,8 @@ class LeakSafety(Node):
         self.vehicle_name = self.get_parameter(
             'vehicle_name').get_parameter_value().string_value
 
+        self.buzzer_pub = self.create_publisher(Button, 'sos_buzzer', 10)
+        
         # Leak service client
         global_path_get_leak = f'/{self.vehicle_name}/get_leak'
         self.leak_check_client = self.create_client(
@@ -42,6 +45,12 @@ class LeakSafety(Node):
         while not self.manipulator_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn('Waiting for manipulator disarm service...')
 
+        self.stop_alarm_srv = self.create_service(
+            Empty,  # Standard service without request fields
+            'stop_alarm',
+            self.stop_alarm
+        )
+
         # Vehicle disarm service
         global_path_arm = f'/{self.vehicle_name}/arm'
         self.vehicle_client = self.create_client(srv_type=SetBool,
@@ -53,6 +62,8 @@ class LeakSafety(Node):
         self.vehicle_disarmed = False
         self.manipulator_disarmed = False
         self.shutdown_triggered = False
+        self.alarm_active = False
+        self.alarm_timer = None
 
         # Timer to check leak state regularly
         self.timer = self.create_timer(timer_period_sec=1 / 50,
@@ -95,18 +106,19 @@ class LeakSafety(Node):
         future.add_done_callback(
             lambda f: self.handle_disarm_response(f, 'manipulator'))
 
-    def handle_disarm_response(self, future):
-        try:
-            response = future.result()
-            if response.success:
-                self.get_logger().info(f'Disarm successful: {response.message}')
-            else:
-                self.get_logger().warn(f'Disarm failed: {response.message}')
-        except Exception as e:
-            self.get_logger().error(f'Disarm service call failed: {e}')
-        self.shutdown_pi()
+    # def handle_disarm_response(self, future):
+    #     try:
+    #         response = future.result()
+    #         if response.success:
+    #             self.get_logger().info(f'Disarm successful: {response.message}')
+    #         else:
+    #             self.get_logger().warn(f'Disarm failed: {response.message}')
+    #     except Exception as e:
+    #         self.get_logger().error(f'Disarm service call failed: {e}')
+    #     self.shutdown_pi()
 
     def handle_disarm_response(self, future, component):
+        self.start_alarm()
         try:
             response = future.result()
             if response.success:
@@ -128,12 +140,33 @@ class LeakSafety(Node):
             self.manipulator_disarmed = True
 
         # Check if both are done
-        if self.vehicle_disarmed and self.manipulator_disarmed and self.shutdown_triggered:
-            self.shutdown_pi()
+        # To-Do: hier den Buzzer aktivieren, statt den UVMS lahm zu legen
+        # oder: volles Stromzufuhr kappen -> relais
+        # if self.vehicle_disarmed and self.manipulator_disarmed and self.shutdown_triggered:
+        #     self.shutdown_pi()
 
     def shutdown_pi(self):
         self.get_logger().info('Shutting down Raspberry Pi...')
         os.system('sudo shutdown now')
+
+    def start_alarm(self):
+        if self.alarm_timer is None:
+            self.alarm_active = True
+            self.alarm_timer = self.create_timer(0.5, self.publish_alarm)
+
+    def publish_alarm(self):
+        if self.alarm_active:
+            msg = Button()
+            msg.button = 1 # value is irrelevant for buzzer activation
+            self.sos_buzzer.publish(msg)
+
+    def stop_alarm(self, request, response):
+        if self.alarm_timer is not None:
+            self.alarm_timer.cancel()
+            self.alarm_timer = None
+        self.alarm_active = False
+        self.get_logger().info('Alarm stopped.')
+        return response
 
 
 def main():
