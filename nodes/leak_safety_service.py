@@ -42,21 +42,17 @@ class LeakSafety(Node):
         global_path_arm_manipulator = f'/{self.vehicle_name}/arm_manipulator'
         self.manipulator_client = self.create_client(
             srv_type=SetBool, srv_name=global_path_arm_manipulator)
-        while not self.manipulator_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().warn('Waiting for manipulator disarm service...')
+
+        # Vehicle disarm service
+        global_path_arm = f'/{self.vehicle_name}/arm'
+        self.vehicle_client = self.create_client(srv_type=SetBool,
+                                                 srv_name=global_path_arm)
 
         self.stop_alarm_srv = self.create_service(
             Empty,  # Standard service without request fields
             'stop_alarm',
             self.stop_alarm
         )
-
-        # Vehicle disarm service
-        global_path_arm = f'/{self.vehicle_name}/arm'
-        self.vehicle_client = self.create_client(srv_type=SetBool,
-                                                 srv_name=global_path_arm)
-        while not self.vehicle_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().warn('Waiting for vehicle disarm service...')
 
         # Internal state
         self.vehicle_disarmed = False
@@ -93,6 +89,9 @@ class LeakSafety(Node):
             self.get_logger().error(f'Error checking leak status: {e}')
 
     def disarm_vehicle(self):
+        if not self.vehicle_client.service_is_ready():
+            self.get_logger().warn('Vehicle disarm service not available.')
+            return
         req = SetBool.Request()
         req.data = False
         future = self.vehicle_client.call_async(req)
@@ -100,6 +99,9 @@ class LeakSafety(Node):
             lambda f: self.handle_disarm_response(f, 'vehicle'))
 
     def disarm_manipulator(self):
+        if not self.manipulator_client.service_is_ready():
+            self.get_logger().warn('Manipulator disarm service not available.')
+            return
         req = SetBool.Request()
         req.data = False
         future = self.manipulator_client.call_async(req)
