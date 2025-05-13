@@ -25,25 +25,14 @@ def generate_launch_description() -> LaunchDescription:
              executable='leak_server.py',
              namespace=LaunchConfiguration('vehicle_name'),
              condition=IfCondition(LaunchConfiguration('start_leak_server'))),
+        Node(package='sos_leak',
+             executable='leak_safety_service.py',
+             namespace=LaunchConfiguration('vehicle_name'),
+             condition=IfCondition(LaunchConfiguration('start_leak_server'))),
         Node(
             package='sos_leak',
             executable='leak_detector_service.py',
-            namespace=PathJoinSubstitution([
-                LaunchConfiguration('vehicle_name'),
-                LaunchConfiguration('tube_name'),
-            ]),
-            parameters=[{
-                'tube_name': LaunchConfiguration('tube_name'),
-                'vehicle_name': LaunchConfiguration('vehicle_name'),
-            }],
-        ),
-        Node(
-            package='sos_leak',
-            executable='leak_safety_service.py',
-            namespace=PathJoinSubstitution([
-                LaunchConfiguration('vehicle_name'),
-                LaunchConfiguration('tube_name'),
-            ]),
+            namespace=LaunchConfiguration('vehicle_name'),
             parameters=[{
                 'tube_name': LaunchConfiguration('tube_name'),
                 'vehicle_name': LaunchConfiguration('vehicle_name'),

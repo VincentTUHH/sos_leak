@@ -19,17 +19,14 @@ class LeakSafety(Node):
         self.declare_parameters(
             namespace='',
             parameters=[
-                ('tube_name', rclpy.Parameter.Type.STRING),
                 ('vehicle_name', rclpy.Parameter.Type.STRING),
             ],
         )
 
-        self.tube_name = self.get_parameter(
-            'tube_name').get_parameter_value().string_value
         self.vehicle_name = self.get_parameter(
             'vehicle_name').get_parameter_value().string_value
 
-        self.buzzer_pub = self.create_publisher(Button, 'sos_buzzer', 10)
+        self.buzzer_pub = self.create_publisher(Button, f'/{self.vehicle_name}/sos_buzzer', 10)
         
         # Leak service client
         global_path_get_leak = f'/{self.vehicle_name}/get_leak'
@@ -65,9 +62,6 @@ class LeakSafety(Node):
         self.timer = self.create_timer(timer_period_sec=1 / 50,
                                        callback=self.on_check_leak)
 
-        self.get_logger().info(
-            f'Leak safety node started for tube: {self.tube_name}')
-
     def on_check_leak(self):
         if self.shutdown_triggered:
             return
@@ -83,6 +77,7 @@ class LeakSafety(Node):
                 self.get_logger().warn(
                     'Leak detected! Initiating safety response.')
                 self.shutdown_triggered = True
+                self.start_alarm()
                 self.disarm_vehicle()
                 self.disarm_manipulator()
         except Exception as e:
@@ -120,7 +115,6 @@ class LeakSafety(Node):
     #     self.shutdown_pi()
 
     def handle_disarm_response(self, future, component):
-        self.start_alarm()
         try:
             response = future.result()
             if response.success:
@@ -160,7 +154,7 @@ class LeakSafety(Node):
         if self.alarm_active:
             msg = Button()
             msg.button = 1 # value is irrelevant for buzzer activation
-            self.sos_buzzer.publish(msg)
+            self.buzzer_pub.publish(msg)
 
     def stop_alarm(self, request, response):
         if self.alarm_timer is not None:

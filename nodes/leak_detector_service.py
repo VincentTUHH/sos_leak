@@ -49,7 +49,7 @@ class LeakDetector(Node):
         leak = GPIO.input(LEAK_SENSOR_PIN) == GPIO.HIGH
 
         if leak and not self.leak_already_sent:
-            self.get_logger().warn('LEAK DETECTED! Notifying server...')
+            self.get_logger().warn(f'LEAK DETECTED in {self.tube_name}! Notifying server...')
             self.send_leak_alert()
             self.leak_already_sent = True
         # elif not leak and self.leak_already_sent:
