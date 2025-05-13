@@ -16,32 +16,22 @@ class LeakSafety(Node):
     def __init__(self):
         super().__init__('leak_safety_service')
 
-        self.declare_parameters(
-            namespace='',
-            parameters=[
-                ('vehicle_name', rclpy.Parameter.Type.STRING),
-            ],
-        )
-
-        self.vehicle_name = self.get_parameter(
-            'vehicle_name').get_parameter_value().string_value
-
-        self.buzzer_pub = self.create_publisher(Button, f'/{self.vehicle_name}/sos_buzzer', 10)
+        self.buzzer_pub = self.create_publisher(Button, 'sos_buzzer', 10)
         
         # Leak service client
-        global_path_get_leak = f'/{self.vehicle_name}/get_leak'
+        global_path_get_leak = 'get_leak'
         self.leak_check_client = self.create_client(
             srv_type=Trigger, srv_name=global_path_get_leak)
         while not self.leak_check_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn('Waiting for /get_leak service...')
 
         # Manipulator disarm service
-        global_path_arm_manipulator = f'/{self.vehicle_name}/arm_manipulator'
+        global_path_arm_manipulator = 'arm_manipulator'
         self.manipulator_client = self.create_client(
             srv_type=SetBool, srv_name=global_path_arm_manipulator)
 
         # Vehicle disarm service
-        global_path_arm = f'/{self.vehicle_name}/arm'
+        global_path_arm = 'arm'
         self.vehicle_client = self.create_client(srv_type=SetBool,
                                                  srv_name=global_path_arm)
 
